@@ -1,232 +1,202 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tuff UBG</title>
-
-<link id="favicon" rel="icon" href="https://www.google.com/favicon.ico">
+<link id="favicon" rel="icon" href="">
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI,sans-serif}
-body{
-    color:white;
-    height:100vh;
-    background:linear-gradient(270deg,#0a001a,#1a0033,#000);
-    background-size:600% 600%;
-    animation:bg 15s ease infinite;
-}
-@keyframes bg{
-    0%{background-position:0% 50%}
-    50%{background-position:100% 50%}
-    100%{background-position:0% 50%}
-}
+/* YOUR ORIGINAL STYLE KEPT */
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",sans-serif;}
+body{height:100vh;background:#05070d;overflow:hidden;color:white;}
+#bg{position:fixed;inset:0;z-index:0;}
+.main{position:relative;z-index:2;height:100vh;display:flex;flex-direction:column;}
+.toolbar{height:50px;background:rgba(255,255,255,0.05);backdrop-filter:blur(15px);display:flex;align-items:center;padding:0 10px;gap:10px;}
+.toolbar button{background:rgba(255,255,255,0.1);border:none;color:white;padding:6px 10px;border-radius:8px;cursor:pointer;}
+.address-bar{flex:1;padding:6px 10px;border-radius:8px;border:none;background:rgba(255,255,255,0.1);color:white;}
+.tabs{display:flex;gap:5px;overflow-x:auto;padding:5px;}
+.tab{padding:6px 12px;background:rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;}
+.tab.active{background:rgba(0,255,200,0.2);box-shadow:0 0 10px #00ffc8;}
+.content{flex:1;position:relative;}
+iframe{width:100%;height:100%;border:none;display:none;}
+iframe.active{display:block;}
+.home{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:25px;}
+.apps{display:grid;grid-template-columns:repeat(3,150px);gap:20px;}
+.app{height:120px;border-radius:16px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.3s;}
+.app:hover{transform:translateY(-5px);box-shadow:0 0 15px #00ffc8;}
 
-/* Layout */
-.container{display:flex;height:100vh}
-
-/* Sidebar */
-.sidebar{
-    width:90px;
-    background:rgba(0,0,0,0.5);
-    backdrop-filter:blur(10px);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding-top:20px;
-}
-.navbtn{
-    margin:15px 0;
-    font-size:22px;
-    cursor:pointer;
-    opacity:.7;
-}
-.navbtn:hover{opacity:1}
-
-/* Main */
-.main{flex:1;padding:20px;overflow:hidden}
-
-/* Logo */
-.logo{
-    font-size:60px;
-    text-align:center;
-    font-weight:800;
-    background:linear-gradient(90deg,#ff00ff,#a855f7);
-    -webkit-background-clip:text;
-    color:transparent;
-}
-
-/* Search */
-.search{
-    margin:20px auto;
-    width:60%;
-}
-.search input{
-    width:100%;
-    padding:14px;
-    border-radius:12px;
-    border:none;
-    background:#111;
-    color:white;
-}
-
-/* Grid */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-    gap:20px;
-    padding:20px;
-}
-.card{
-    background:rgba(255,255,255,0.05);
-    padding:25px;
-    border-radius:18px;
-    text-align:center;
-    cursor:pointer;
-    transition:.3s;
-}
-.card:hover{
-    transform:scale(1.05);
-    box-shadow:0 0 15px #ff00ff;
-}
-
-/* iframe view */
-.viewer{
-    width:100%;
-    height:75vh;
-    border:none;
-    border-radius:14px;
-    margin-top:15px;
-}
-
-/* topbar */
-.topbar{
-    position:absolute;
-    top:10px;
-    right:20px;
-}
-select{
-    padding:6px;
-    border-radius:8px;
-    background:#111;
-    color:white;
-    border:none;
-}
+/* GAMES UI */
+.games{padding:20px}
+.game-search{padding:10px;border-radius:10px;border:none;width:300px;background:#111;color:white;margin-bottom:15px;}
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,140px);gap:15px;}
+.game{background:rgba(255,255,255,0.05);padding:20px;border-radius:12px;text-align:center;cursor:pointer;}
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-<select onchange="cloak(this.value)">
-<option value="default">Default</option>
-<option value="google">Google</option>
-<option value="classroom">Classroom</option>
-<option value="drive">Drive</option>
-</select>
-</div>
+<canvas id="bg"></canvas>
 
-<div class="container">
-
-<!-- Sidebar -->
-<div class="sidebar">
-<div class="navbtn" onclick="showTab('home')">🏠</div>
-<div class="navbtn" onclick="showTab('games')">🎮</div>
-<div class="navbtn" onclick="showTab('browser')">🌐</div>
-</div>
-
-<!-- Main -->
 <div class="main">
 
-<div id="home" class="tab">
-<div class="logo">TUFF UBG</div>
+<div class="toolbar">
+<button onclick="goBack()">◀</button>
+<button onclick="goForward()">▶</button>
+<button onclick="refreshTab()">⟳</button>
+<input class="address-bar" id="address" placeholder="Search with DuckDuckGo or enter URL">
+
+<button onclick="cloak('google')">Google</button>
+<button onclick="cloak('classroom')">Class</button>
+<button onclick="cloak('drive')">Drive</button>
+<button onclick="cloak('reset')">Reset</button>
+
+<button onclick="panic()">Panic</button>
 </div>
 
-<div id="games" class="tab" style="display:none">
+<div class="tabs" id="tabs"></div>
 
-<div class="search">
-<input type="text" placeholder="Search games..." onkeyup="filterGames(this.value)">
+<div class="content" id="content">
+
+<div class="home" id="home">
+<div class="apps">
+<div class="app" onclick="openURL('https://duckduckgo.com','Browser')">Browser</div>
+<div class="app" onclick="openGames()">Games</div>
+<div class="app" onclick="window.open('https://www.xbox.com/play','_blank')">Xbox Cloud</div>
 </div>
-
-<div class="grid" id="gameGrid">
-
-<div class="card" onclick="loadGame('https://example.com')">Game 1</div>
-<div class="card" onclick="loadGame('https://example.com')">Game 2</div>
-<div class="card" onclick="loadGame('https://example.com')">Game 3</div>
-<div class="card" onclick="loadGame('https://example.com')">Game 4</div>
-
-</div>
-
-<iframe id="gameFrame" class="viewer"></iframe>
-
-</div>
-
-<div id="browser" class="tab" style="display:none">
-
-<div class="search">
-<input type="text" id="urlBar" placeholder="Search the web..." onkeydown="go(event)">
-</div>
-
-<iframe id="browserFrame" class="viewer"
-src="https://duckduckgo.com"></iframe>
-
 </div>
 
 </div>
 </div>
 
 <script>
+/* AUTO CLOAK ON LOAD */
+window.onload=()=>cloak("google")
 
-/* TAB SYSTEM */
-function showTab(tab){
-    document.querySelectorAll(".tab").forEach(t=>t.style.display="none")
-    document.getElementById(tab).style.display="block"
-}
-
-/* GAME LOADER */
-function loadGame(url){
-    document.getElementById("gameFrame").src=url
-}
-
-/* SEARCH FILTER */
-function filterGames(input){
-    let cards=document.querySelectorAll(".card")
-    cards.forEach(card=>{
-        card.style.display=card.innerText.toLowerCase().includes(input.toLowerCase())
-        ? "block":"none"
-    })
-}
-
-/* DUCKDUCKGO SEARCH */
-function go(e){
-    if(e.key==="Enter"){
-        let query=document.getElementById("urlBar").value
-        document.getElementById("browserFrame").src=
-        "https://duckduckgo.com/?q="+encodeURIComponent(query)
-    }
-}
-
-/* CLOAKING */
 function cloak(type){
-    let icon=document.getElementById("favicon")
+const icon=document.getElementById("favicon")
 
-    if(type==="google"){
-        document.title="Google"
-        icon.href="https://www.google.com/favicon.ico"
-    }
-    if(type==="classroom"){
-        document.title="Classes"
-        icon.href="https://ssl.gstatic.com/classroom/favicon.png"
-    }
-    if(type==="drive"){
-        document.title="My Drive"
-        icon.href="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png"
-    }
-    if(type==="default"){
-        document.title="Tuff UBG"
-        icon.href="https://www.google.com/favicon.ico"
-    }
+if(type==="google"){document.title="Google";icon.href="https://google.com/favicon.ico"}
+if(type==="classroom"){document.title="Classes";icon.href="https://ssl.gstatic.com/classroom/favicon.png"}
+if(type==="drive"){document.title="My Drive";icon.href="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png"}
+if(type==="reset"){document.title="Tuff UBG";icon.href=""}
 }
+
+/* ADDRESS BAR */
+address.addEventListener("keydown",e=>{
+if(e.key==="Enter"){
+let input=e.target.value
+let url=input.includes(".")?"https://"+input:"https://duckduckgo.com/?q="+input
+openURL(url,"New Tab")
+}})
+
+let currentIframe=null
+
+function openURL(url,name){
+home.style.display="none"
+
+const iframe=document.createElement("iframe")
+iframe.src=url
+iframe.classList.add("active")
+content.appendChild(iframe)
+
+const tab=document.createElement("div")
+tab.className="tab active"
+tab.textContent=name
+tabs.appendChild(tab)
+
+clearActive()
+iframe.classList.add("active")
+tab.classList.add("active")
+tab.onclick=()=>activateTab(tab,iframe)
+currentIframe=iframe
+}
+
+function openGames(){
+home.style.display="none"
+
+const frame=document.createElement("iframe")
+frame.srcdoc=gamesHTML
+frame.classList.add("active")
+content.appendChild(frame)
+
+const tab=document.createElement("div")
+tab.className="tab active"
+tab.textContent="Games"
+tabs.appendChild(tab)
+
+clearActive()
+frame.classList.add("active")
+tab.classList.add("active")
+tab.onclick=()=>activateTab(tab,frame)
+currentIframe=frame
+}
+
+function activateTab(tab,iframe){
+clearActive()
+tab.classList.add("active")
+iframe.classList.add("active")
+currentIframe=iframe
+}
+
+function clearActive(){
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+document.querySelectorAll("iframe").forEach(f=>f.classList.remove("active"))
+}
+
+function goBack(){currentIframe?.contentWindow.history.back()}
+function goForward(){currentIframe?.contentWindow.history.forward()}
+function refreshTab(){currentIframe?.contentWindow.location.reload()}
+function panic(){location.href="https://google.com"}
+
+/* GAMES PAGE */
+const gamesHTML=`
+<div class="games">
+<input class="game-search" placeholder="Search games..." onkeyup="filterGames(this.value)">
+<div class="game-grid" id="grid">
+
+<div class="game" onclick="loadGame('https://truffled.lol/gamefile/Granny.html)">Granny</div>
+<div class="game" onclick="loadGame('https://truffled.lol/games/vicecity/index.html')">Vice City</div>
+<div class="game" onclick="loadGame('https://truffled.lol/games/gtag/index.html')">Gorilla Tag</div>
+<div class="game" onclick="loadGame('https://truffled.lol/games/slimerancher/index.html')">Slime Rancher</div>
+
+</div>
+<iframe id="play" style="width:100%;height:60vh;border:none;margin-top:15px;"></iframe>
+</div>
+
+<script>
+function loadGame(url){play.src=url}
+function filterGames(q){
+document.querySelectorAll('.game').forEach(g=>{
+g.style.display=g.innerText.toLowerCase().includes(q.toLowerCase())?'block':'none'
+})
+}
+<\/script>
+`
+
+/* PARTICLES */
+const canvas=document.getElementById("bg")
+const ctx=canvas.getContext("2d")
+canvas.width=innerWidth
+canvas.height=innerHeight
+let particles=[]
+for(let i=0;i<100;i++){
+particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2,dx:(Math.random()-0.5)*0.3,dy:(Math.random()-0.5)*0.3})
+}
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height)
+ctx.fillStyle="#00ffc8"
+particles.forEach(p=>{
+ctx.beginPath()
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2)
+ctx.fill()
+p.x+=p.dx
+p.y+=p.dy
+if(p.x<0||p.x>canvas.width)p.dx*=-1
+if(p.y<0||p.y>canvas.height)p.dy*=-1
+})
+requestAnimationFrame(animate)
+}
+animate()
 </script>
 
 </body>
