@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tuff UBG</title>
+
+<link id="favicon" rel="icon" href="https://www.google.com/favicon.ico">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI,sans-serif}
+body{
+    color:white;
+    height:100vh;
+    background:linear-gradient(270deg,#0a001a,#1a0033,#000);
+    background-size:600% 600%;
+    animation:bg 15s ease infinite;
+}
+@keyframes bg{
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
+}
+
+/* Layout */
+.container{display:flex;height:100vh}
+
+/* Sidebar */
+.sidebar{
+    width:90px;
+    background:rgba(0,0,0,0.5);
+    backdrop-filter:blur(10px);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:20px;
+}
+.navbtn{
+    margin:15px 0;
+    font-size:22px;
+    cursor:pointer;
+    opacity:.7;
+}
+.navbtn:hover{opacity:1}
+
+/* Main */
+.main{flex:1;padding:20px;overflow:hidden}
+
+/* Logo */
+.logo{
+    font-size:60px;
+    text-align:center;
+    font-weight:800;
+    background:linear-gradient(90deg,#ff00ff,#a855f7);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+/* Search */
+.search{
+    margin:20px auto;
+    width:60%;
+}
+.search input{
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:none;
+    background:#111;
+    color:white;
+}
+
+/* Grid */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:20px;
+    padding:20px;
+}
+.card{
+    background:rgba(255,255,255,0.05);
+    padding:25px;
+    border-radius:18px;
+    text-align:center;
+    cursor:pointer;
+    transition:.3s;
+}
+.card:hover{
+    transform:scale(1.05);
+    box-shadow:0 0 15px #ff00ff;
+}
+
+/* iframe view */
+.viewer{
+    width:100%;
+    height:75vh;
+    border:none;
+    border-radius:14px;
+    margin-top:15px;
+}
+
+/* topbar */
+.topbar{
+    position:absolute;
+    top:10px;
+    right:20px;
+}
+select{
+    padding:6px;
+    border-radius:8px;
+    background:#111;
+    color:white;
+    border:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+<select onchange="cloak(this.value)">
+<option value="default">Default</option>
+<option value="google">Google</option>
+<option value="classroom">Classroom</option>
+<option value="drive">Drive</option>
+</select>
+</div>
+
+<div class="container">
+
+<!-- Sidebar -->
+<div class="sidebar">
+<div class="navbtn" onclick="showTab('home')">🏠</div>
+<div class="navbtn" onclick="showTab('games')">🎮</div>
+<div class="navbtn" onclick="showTab('browser')">🌐</div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+<div id="home" class="tab">
+<div class="logo">TUFF UBG</div>
+</div>
+
+<div id="games" class="tab" style="display:none">
+
+<div class="search">
+<input type="text" placeholder="Search games..." onkeyup="filterGames(this.value)">
+</div>
+
+<div class="grid" id="gameGrid">
+
+<div class="card" onclick="loadGame('https://example.com')">Game 1</div>
+<div class="card" onclick="loadGame('https://example.com')">Game 2</div>
+<div class="card" onclick="loadGame('https://example.com')">Game 3</div>
+<div class="card" onclick="loadGame('https://example.com')">Game 4</div>
+
+</div>
+
+<iframe id="gameFrame" class="viewer"></iframe>
+
+</div>
+
+<div id="browser" class="tab" style="display:none">
+
+<div class="search">
+<input type="text" id="urlBar" placeholder="Search the web..." onkeydown="go(event)">
+</div>
+
+<iframe id="browserFrame" class="viewer"
+src="https://duckduckgo.com"></iframe>
+
+</div>
+
+</div>
+</div>
+
+<script>
+
+/* TAB SYSTEM */
+function showTab(tab){
+    document.querySelectorAll(".tab").forEach(t=>t.style.display="none")
+    document.getElementById(tab).style.display="block"
+}
+
+/* GAME LOADER */
+function loadGame(url){
+    document.getElementById("gameFrame").src=url
+}
+
+/* SEARCH FILTER */
+function filterGames(input){
+    let cards=document.querySelectorAll(".card")
+    cards.forEach(card=>{
+        card.style.display=card.innerText.toLowerCase().includes(input.toLowerCase())
+        ? "block":"none"
+    })
+}
+
+/* DUCKDUCKGO SEARCH */
+function go(e){
+    if(e.key==="Enter"){
+        let query=document.getElementById("urlBar").value
+        document.getElementById("browserFrame").src=
+        "https://duckduckgo.com/?q="+encodeURIComponent(query)
+    }
+}
+
+/* CLOAKING */
+function cloak(type){
+    let icon=document.getElementById("favicon")
+
+    if(type==="google"){
+        document.title="Google"
+        icon.href="https://www.google.com/favicon.ico"
+    }
+    if(type==="classroom"){
+        document.title="Classes"
+        icon.href="https://ssl.gstatic.com/classroom/favicon.png"
+    }
+    if(type==="drive"){
+        document.title="My Drive"
+        icon.href="https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png"
+    }
+    if(type==="default"){
+        document.title="Tuff UBG"
+        icon.href="https://www.google.com/favicon.ico"
+    }
+}
+</script>
+
+</body>
+</html>
