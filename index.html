@@ -3,19 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <title>Tuff UBG</title>
-<link id="favicon" rel="icon" href="">
+<link id="favicon" rel="icon">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI}
 body{
-height:100vh;
-overflow:hidden;
-color:white;
-background:radial-gradient(circle at 30% 30%,#ff00cc33,transparent 40%),
-linear-gradient(120deg,#0b001a,#02030a 60%);
+height:100vh;overflow:hidden;color:white;
+background:#02030a;
 }
 
-/* SATURN CENTER */
+/* ANIMATED SATURN BLOBS */
+.bg{
+position:fixed;inset:0;z-index:-1;
+background:
+radial-gradient(circle at 20% 30%,#ff00cc55,transparent 40%),
+radial-gradient(circle at 80% 70%,#7a00ff55,transparent 40%);
+filter:blur(80px);
+animation:move 15s infinite alternate ease-in-out;
+}
+@keyframes move{
+0%{transform:translateY(-20px)}
+100%{transform:translateY(20px)}
+}
+
+/* CENTER HOME */
 .home{
 position:absolute;inset:0;
 display:flex;flex-direction:column;
@@ -23,232 +34,165 @@ align-items:center;justify-content:center;
 gap:30px;
 }
 .logo{
-font-size:80px;
-font-weight:800;
+font-size:90px;font-weight:800;
 background:linear-gradient(90deg,#ff00ff,#ff4df8);
--webkit-background-clip:text;
-color:transparent;
-text-shadow:0 0 25px #ff00ff55;
+-webkit-background-clip:text;color:transparent;
 }
 .search{
-width:500px;
-padding:15px;
-border-radius:14px;
-border:none;
-background:rgba(255,255,255,0.08);
-color:white;
+width:500px;padding:15px;border-radius:14px;
+border:none;background:#ffffff10;color:white;
 backdrop-filter:blur(10px);
 }
 
-/* APPS */
-.apps{
-display:flex;
-gap:20px;
-}
-.app{
-width:120px;height:120px;
+/* DOCK */
+.dock{
+position:absolute;bottom:25px;left:50%;
+transform:translateX(-50%);
+display:flex;gap:20px;
+padding:15px 25px;
 border-radius:20px;
-background:rgba(255,255,255,0.05);
+background:#ffffff10;
+backdrop-filter:blur(15px);
+}
+.app{width:60px;height:60px;
 display:flex;align-items:center;justify-content:center;
-cursor:pointer;
-transition:.3s;
-box-shadow:0 0 15px transparent;
-}
-.app:hover{
-transform:translateY(-6px);
-box-shadow:0 0 20px #ff00ff;
-}
+cursor:pointer;font-size:28px;
+transition:.3s}
+.app:hover{transform:translateY(-8px)}
 
-/* BROWSER UI */
-.main{position:absolute;inset:0;display:flex;flex-direction:column}
+/* TOOLBAR */
 .toolbar{
-height:50px;
-background:rgba(255,255,255,0.05);
-display:flex;gap:10px;align-items:center;
-padding:0 10px;
-backdrop-filter:blur(10px);
+height:50px;background:#ffffff10;
+display:flex;gap:10px;align-items:center;padding:0 10px;
 }
-.address-bar{
-flex:1;padding:8px;border-radius:10px;border:none;
-background:rgba(255,255,255,0.08);color:white;
-}
+.address{flex:1;padding:8px;border-radius:10px;border:none;background:#ffffff10;color:white}
+
+/* TABS */
 .tabs{display:flex;gap:6px;padding:6px;overflow:auto}
-.tab{
-padding:6px 14px;
-background:rgba(255,255,255,0.08);
-border-radius:10px;
-cursor:grab;
-display:flex;gap:8px;align-items:center;
-}
-.tab.active{
-background:#ff00ff33;
-box-shadow:0 0 10px #ff00ff;
-}
-.close{cursor:pointer;color:#ff8080}
+.tab{padding:6px 14px;background:#ffffff10;border-radius:10px;display:flex;gap:8px;align-items:center;cursor:pointer}
+.tab.active{box-shadow:0 0 10px #ff00ff}
+.close{color:#ff8080;cursor:pointer}
 
 iframe{width:100%;height:100%;border:none;display:none}
 iframe.active{display:block}
 
-.bookmarks{
-height:35px;
-display:flex;
-gap:10px;
-align-items:center;
-padding:5px 10px;
-background:rgba(255,255,255,0.04);
+/* SETTINGS PANEL */
+.settings{
+position:absolute;top:50%;left:50%;
+transform:translate(-50%,-50%);
+background:#111;padding:25px;border-radius:20px;
+display:none;flex-direction:column;gap:15px;
 }
-.bookmark{cursor:pointer}
 </style>
 </head>
 
 <body>
 
-<div class="main">
+<div class="bg"></div>
 
-<!-- TOOLBAR -->
 <div class="toolbar">
-<button onclick="goBack()">◀</button>
-<button onclick="goForward()">▶</button>
-<button onclick="refreshTab()">⟳</button>
-
-<input id="address" class="address-bar" placeholder="Search with DuckDuckGo or enter URL">
-
-<button onclick="addBookmark()">★</button>
-<button onclick="cloak('google')">G</button>
-<button onclick="panic()">Panic</button>
+<button onclick="back()">◀</button>
+<button onclick="forward()">▶</button>
+<button onclick="reload()">⟳</button>
+<input id="url" class="address" placeholder="Search DuckDuckGo or enter URL">
+<button onclick="bookmark()">★</button>
+<button onclick="openSettings()">⚙</button>
+<button onclick="cloak()">🕶</button>
 </div>
 
-<div class="bookmarks" id="bookmarks"></div>
 <div class="tabs" id="tabs"></div>
-<div id="content" style="flex:1;position:relative">
+<div id="content" style="height:calc(100vh - 90px)"></div>
 
 <!-- HOME -->
 <div class="home" id="home">
 <div class="logo">TUFF</div>
-
-<input class="search" placeholder="Search the web..."
+<input class="search" placeholder="Search..."
 onkeydown="homeSearch(event)">
-
-<div class="apps">
+<div class="dock">
 <div class="app" onclick="openURL('https://duckduckgo.com','Browser')">🌐</div>
 <div class="app" onclick="openGames()">🎮</div>
 <div class="app" onclick="openURL('https://chat.openai.com','AI')">✨</div>
-<div class="app" onclick="toggleSettings()">⚙</div>
+<div class="app" onclick="openSettings()">⚙</div>
 </div>
 </div>
 
+<!-- SETTINGS -->
+<div class="settings" id="settings">
+<h2>Settings</h2>
+<input type="file" onchange="wallpaper(event)">
+<button onclick="music()">Toggle Music</button>
+<button onclick="closeSettings()">Close</button>
 </div>
-</div>
+
+<audio id="player" loop src=""></audio>
 
 <script>
-let currentIframe
+let current
 
-/* SEARCH */
-function homeSearch(e){
+url.onkeydown=e=>{
 if(e.key==="Enter"){
-openURL("https://duckduckgo.com/?q="+e.target.value,"Search")
+let v=url.value
+let u=v.includes(".")?"https://"+v:"https://duckduckgo.com/?q="+v
+openURL(u,"New Tab")
 }}
 
-/* TABS */
-function openURL(url,name){
+function homeSearch(e){
+if(e.key==="Enter")openURL("https://duckduckgo.com/?q="+e.target.value,"Search")
+}
+
+function openURL(u,n){
 home.style.display="none"
-createTab(url,name)
+let f=document.createElement("iframe")
+f.src=u
+content.appendChild(f)
+
+let t=document.createElement("div")
+t.className="tab"
+t.innerHTML="<img src='https://www.google.com/s2/favicons?domain="+u+"'> "+n+" <span class='close'>×</span>"
+tabs.appendChild(t)
+
+t.onclick=()=>activate(t,f)
+t.querySelector(".close").onclick=e=>{e.stopPropagation();t.remove();f.remove()}
+
+activate(t,f)
 }
 
-function createTab(url,name){
-const iframe=document.createElement("iframe")
-iframe.src=url
-content.appendChild(iframe)
-
-const tab=document.createElement("div")
-tab.className="tab"
-tab.innerHTML=name+" <span class='close'>×</span>"
-tabs.appendChild(tab)
-
-tab.onclick=()=>activate(tab,iframe)
-tab.querySelector(".close").onclick=e=>{
-e.stopPropagation()
-tab.remove()
-iframe.remove()
+function activate(t,f){
+document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"))
+document.querySelectorAll("iframe").forEach(x=>x.classList.remove("active"))
+t.classList.add("active")
+f.classList.add("active")
+current=f
 }
 
-activate(tab,iframe)
-}
+function back(){current?.contentWindow.history.back()}
+function forward(){current?.contentWindow.history.forward()}
+function reload(){current?.contentWindow.location.reload()}
 
-function activate(tab,iframe){
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
-document.querySelectorAll("iframe").forEach(f=>f.classList.remove("active"))
-tab.classList.add("active")
-iframe.classList.add("active")
-currentIframe=iframe
-}
+function bookmark(){localStorage.setItem("last",current.src)}
 
-/* NAV */
-address.addEventListener("keydown",e=>{
-if(e.key==="Enter"){
-let v=address.value
-let url=v.includes(".")?"https://"+v:"https://duckduckgo.com/?q="+v
-openURL(url,"New Tab")
-}})
-
-function goBack(){currentIframe?.contentWindow.history.back()}
-function goForward(){currentIframe?.contentWindow.history.forward()}
-function refreshTab(){currentIframe?.contentWindow.location.reload()}
-
-/* GAMES */
-function openGames(){
-createTab("data:text/html,"+encodeURIComponent(gamesHTML),"Games")
-}
-
-const gamesHTML=`
-<body style="background:#02030a;color:white;font-family:sans-serif;text-align:center">
-<h1>Games</h1>
-<input placeholder="Search..." onkeyup="f(this.value)">
-<div id="g">
-<div onclick="p('https://example.com')">Game 1</div>
-<div onclick="p('https://example.com')">Game 2</div>
-</div>
-<iframe id="play" style="width:100%;height:70vh;border:none"></iframe>
-<script>
-function p(u){play.src=u}
-function f(q){
-document.querySelectorAll('#g div').forEach(d=>{
-d.style.display=d.innerText.toLowerCase().includes(q.toLowerCase())?'block':'none'
-})
-}
-<\/script>
-`
-
-/* BOOKMARKS */
-function addBookmark(){
-if(!currentIframe)return
-let b=JSON.parse(localStorage.getItem("b")||"[]")
-b.push(currentIframe.src)
-localStorage.setItem("b",JSON.stringify(b))
-loadBookmarks()
-}
-
-function loadBookmarks(){
-bookmarks.innerHTML=""
-JSON.parse(localStorage.getItem("b")||"[]")
-.forEach(u=>{
-let d=document.createElement("div")
-d.className="bookmark"
-d.textContent="★"
-d.onclick=()=>openURL(u,"Bookmark")
-bookmarks.appendChild(d)
-})
-}
-loadBookmarks()
-
-/* CLOAK */
 function cloak(){
 document.title="Google"
 favicon.href="https://google.com/favicon.ico"
 }
 
-/* PANIC */
-function panic(){location.href="https://google.com"}
+function openSettings(){settings.style.display="flex"}
+function closeSettings(){settings.style.display="none"}
+
+function wallpaper(e){
+let r=new FileReader()
+r.onload=()=>document.body.style.background="url("+r.result+") center/cover"
+r.readAsDataURL(e.target.files[0])
+}
+
+function music(){
+player.src="https://files.catbox.moe/8f3y5x.mp3"
+player.paused?player.play():player.pause()
+}
+
+function openGames(){
+openURL("data:text/html,<h1 style='color:white;text-align:center'>Games</h1>","Games")
+}
 </script>
 
 </body>
