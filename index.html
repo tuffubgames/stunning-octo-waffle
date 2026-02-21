@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <title>Tuff UBG</title>
 <link id="favicon" rel="icon">
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI}
 body{height:100vh;overflow:hidden;background:#02030a;color:white}
 
-/* animated background */
+/* background */
 .bg{
 position:fixed;inset:0;z-index:-1;
 background:
@@ -21,7 +20,7 @@ animation:move 15s infinite alternate ease-in-out;
 @keyframes move{0%{transform:translateY(-20px)}100%{transform:translateY(20px)}}
 
 /* desktop */
-.desktop{position:absolute;inset:0;padding:20px}
+.desktop{position:absolute;inset:0}
 
 /* taskbar */
 .taskbar{
@@ -29,17 +28,16 @@ position:absolute;bottom:0;left:0;right:0;height:55px;
 background:#ffffff10;backdrop-filter:blur(15px);
 display:flex;align-items:center;gap:10px;padding:0 10px;
 }
-.task{
-padding:6px 14px;background:#ffffff10;border-radius:10px;cursor:pointer
-}
 
-/* windows */
+.icon{font-size:26px;cursor:pointer}
+
+/* window */
 .window{
-position:absolute;width:700px;height:450px;
-background:#0c0c12;border-radius:16px;
-box-shadow:0 0 25px #000;
+position:absolute;width:900px;height:550px;
+background:#0c0c12;border-radius:14px;
 display:flex;flex-direction:column;
 resize:both;overflow:hidden;
+box-shadow:0 0 25px #000;
 }
 
 .titlebar{
@@ -48,13 +46,19 @@ display:flex;align-items:center;justify-content:space-between;
 padding:0 10px;cursor:move
 }
 
-.controls span{margin-left:10px;cursor:pointer}
+.controls span{margin-left:12px;cursor:pointer}
 
-iframe{flex:1;border:none}
+/* browser UI */
+.toolbar{display:flex;gap:6px;padding:6px;background:#ffffff10}
+.toolbar input{flex:1;padding:6px;background:#00000030;border:none;color:white;border-radius:6px}
 
-/* dock icons */
-.icons{display:flex;gap:20px}
-.icon{font-size:28px;cursor:pointer}
+.tabs{display:flex;gap:6px;padding:6px;background:#00000040;overflow-x:auto}
+.tab{padding:4px 10px;background:#ffffff15;border-radius:8px;cursor:pointer;display:flex;gap:6px}
+.tab.active{box-shadow:0 0 10px #ff00ff}
+.closeTab{color:#ff8080;cursor:pointer}
+
+iframe{flex:1;border:none;display:none}
+iframe.active{display:block}
 </style>
 </head>
 
@@ -64,12 +68,8 @@ iframe{flex:1;border:none}
 <div class="desktop" id="desktop"></div>
 
 <div class="taskbar">
-<div class="icons">
 <div class="icon" onclick="openBrowser()">🌐</div>
-<div class="icon" onclick="openGames()">🎮</div>
 <div class="icon" onclick="openSettings()">⚙</div>
-</div>
-<div id="tasks"></div>
 </div>
 
 <audio id="player" loop></audio>
@@ -80,14 +80,16 @@ let z=1
 function createWindow(title,content){
 let win=document.createElement("div")
 win.className="window"
-win.style.top="80px"
-win.style.left="120px"
+win.style.top="60px"
+win.style.left="100px"
 win.style.zIndex=++z
 
 win.innerHTML=`
 <div class="titlebar">
 ${title}
 <div class="controls">
+<span onclick="minimize(this)">🗕</span>
+<span onclick="maximize(this)">🗖</span>
 <span onclick="this.closest('.window').remove()">✖</span>
 </div>
 </div>
@@ -96,9 +98,10 @@ ${content}
 
 desktop.appendChild(win)
 drag(win)
-task(title,win)
+return win
 }
 
+/* drag */
 function drag(el){
 let bar=el.querySelector(".titlebar")
 bar.onmousedown=e=>{
@@ -107,43 +110,94 @@ let y=e.clientY-el.offsetTop
 document.onmousemove=e=>{
 el.style.left=e.clientX-x+"px"
 el.style.top=e.clientY-y+"px"
+el.style.zIndex=++z
 }
 document.onmouseup=()=>document.onmousemove=null
 }
 }
 
-/* taskbar */
-function task(name,win){
-let t=document.createElement("div")
-t.className="task"
-t.textContent=name
-t.onclick=()=>win.style.zIndex=++z
-tasks.appendChild(t)
+/* window controls */
+function minimize(btn){
+btn.closest(".window").style.display="none"
 }
 
-/* apps */
+function maximize(btn){
+let w=btn.closest(".window")
+w.style.top=0
+w.style.left=0
+w.style.width="100%"
+w.style.height="calc(100% - 55px)"
+}
+
+/* ================= BROWSER ================= */
+
 function openBrowser(){
-createWindow("Browser",`
+
+let win=createWindow("Browser",`
 <div class="toolbar">
-<input id="urlBox" placeholder="Search DuckDuckGo or enter URL"
-style="width:100%;padding:8px;background:#ffffff10;border:none;color:white"
+<button onclick="nav(this,'back')">◀</button>
+<button onclick="nav(this,'forward')">▶</button>
+<button onclick="nav(this,'reload')">⟳</button>
+<input placeholder="Search or enter URL"
 onkeydown="if(event.key==='Enter'){go(this)}">
+<button onclick="newTab(this)">＋</button>
 </div>
-<iframe src="https://duckduckgo.com"></iframe>
+
+<div class="tabs"></div>
+<div class="views" style="flex:1;display:flex;flex-direction:column"></div>
 `)
+
+newTab(win.querySelector("button"))
 }
 
-function go(i){
-let u=i.value.includes(".")?"https://"+i.value:
-"https://duckduckgo.com/?q="+i.value
-i.parentElement.nextElementSibling.src=u
+function newTab(btn){
+let win=btn.closest(".window")
+let tabs=win.querySelector(".tabs")
+let views=win.querySelector(".views")
+
+let iframe=document.createElement("iframe")
+iframe.src="https://duckduckgo.com"
+
+let tab=document.createElement("div")
+tab.className="tab active"
+tab.innerHTML="New Tab <span class='closeTab'>✖</span>"
+
+tabs.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+views.querySelectorAll("iframe").forEach(v=>v.classList.remove("active"))
+
+views.appendChild(iframe)
+tabs.appendChild(tab)
+
+iframe.classList.add("active")
+
+tab.onclick=()=>{
+tabs.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"))
+views.querySelectorAll("iframe").forEach(v=>v.classList.remove("active"))
+tab.classList.add("active")
+iframe.classList.add("active")
 }
 
-function openGames(){
-createWindow("Games",`
-<iframe src="data:text/html,<h1 style='color:white;text-align:center'>Your games here</h1>"></iframe>
-`)
+tab.querySelector(".closeTab").onclick=e=>{
+e.stopPropagation()
+tab.remove()
+iframe.remove()
 }
+}
+
+function go(input){
+let frame=input.closest(".window").querySelector("iframe.active")
+let v=input.value
+frame.src=v.includes(".")?"https://"+v:"https://duckduckgo.com/?q="+v
+}
+
+function nav(btn,type){
+let frame=btn.closest(".window").querySelector("iframe.active")
+if(type==="back")frame.contentWindow.history.back()
+if(type==="forward")frame.contentWindow.history.forward()
+if(type==="reload")frame.contentWindow.location.reload()
+}
+
+/* ================= SETTINGS ================= */
 
 function openSettings(){
 createWindow("Settings",`
@@ -155,11 +209,19 @@ createWindow("Settings",`
 `)
 }
 
-/* features */
+/* extras */
+
 function wallpaper(e){
 let r=new FileReader()
-r.onload=()=>document.body.style.background="url("+r.result+") center/cover"
+r.onload=()=>{
+document.body.style.background="url("+r.result+") center/cover"
+localStorage.setItem("wall",r.result)
+}
 r.readAsDataURL(e.target.files[0])
+}
+
+if(localStorage.wall){
+document.body.style.background="url("+localStorage.wall+") center/cover"
 }
 
 function music(){
@@ -172,6 +234,5 @@ document.title="Google"
 favicon.href="https://google.com/favicon.ico"
 }
 </script>
-
 </body>
 </html>
