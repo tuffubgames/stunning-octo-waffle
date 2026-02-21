@@ -7,12 +7,9 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI}
-body{
-height:100vh;overflow:hidden;color:white;
-background:#02030a;
-}
+body{height:100vh;overflow:hidden;background:#02030a;color:white}
 
-/* ANIMATED SATURN BLOBS */
+/* animated background */
 .bg{
 position:fixed;inset:0;z-index:-1;
 background:
@@ -21,164 +18,144 @@ radial-gradient(circle at 80% 70%,#7a00ff55,transparent 40%);
 filter:blur(80px);
 animation:move 15s infinite alternate ease-in-out;
 }
-@keyframes move{
-0%{transform:translateY(-20px)}
-100%{transform:translateY(20px)}
+@keyframes move{0%{transform:translateY(-20px)}100%{transform:translateY(20px)}}
+
+/* desktop */
+.desktop{position:absolute;inset:0;padding:20px}
+
+/* taskbar */
+.taskbar{
+position:absolute;bottom:0;left:0;right:0;height:55px;
+background:#ffffff10;backdrop-filter:blur(15px);
+display:flex;align-items:center;gap:10px;padding:0 10px;
+}
+.task{
+padding:6px 14px;background:#ffffff10;border-radius:10px;cursor:pointer
 }
 
-/* CENTER HOME */
-.home{
-position:absolute;inset:0;
+/* windows */
+.window{
+position:absolute;width:700px;height:450px;
+background:#0c0c12;border-radius:16px;
+box-shadow:0 0 25px #000;
 display:flex;flex-direction:column;
-align-items:center;justify-content:center;
-gap:30px;
-}
-.logo{
-font-size:90px;font-weight:800;
-background:linear-gradient(90deg,#ff00ff,#ff4df8);
--webkit-background-clip:text;color:transparent;
-}
-.search{
-width:500px;padding:15px;border-radius:14px;
-border:none;background:#ffffff10;color:white;
-backdrop-filter:blur(10px);
+resize:both;overflow:hidden;
 }
 
-/* DOCK */
-.dock{
-position:absolute;bottom:25px;left:50%;
-transform:translateX(-50%);
-display:flex;gap:20px;
-padding:15px 25px;
-border-radius:20px;
-background:#ffffff10;
-backdrop-filter:blur(15px);
+.titlebar{
+height:40px;background:#ffffff10;
+display:flex;align-items:center;justify-content:space-between;
+padding:0 10px;cursor:move
 }
-.app{width:60px;height:60px;
-display:flex;align-items:center;justify-content:center;
-cursor:pointer;font-size:28px;
-transition:.3s}
-.app:hover{transform:translateY(-8px)}
 
-/* TOOLBAR */
-.toolbar{
-height:50px;background:#ffffff10;
-display:flex;gap:10px;align-items:center;padding:0 10px;
-}
-.address{flex:1;padding:8px;border-radius:10px;border:none;background:#ffffff10;color:white}
+.controls span{margin-left:10px;cursor:pointer}
 
-/* TABS */
-.tabs{display:flex;gap:6px;padding:6px;overflow:auto}
-.tab{padding:6px 14px;background:#ffffff10;border-radius:10px;display:flex;gap:8px;align-items:center;cursor:pointer}
-.tab.active{box-shadow:0 0 10px #ff00ff}
-.close{color:#ff8080;cursor:pointer}
+iframe{flex:1;border:none}
 
-iframe{width:100%;height:100%;border:none;display:none}
-iframe.active{display:block}
-
-/* SETTINGS PANEL */
-.settings{
-position:absolute;top:50%;left:50%;
-transform:translate(-50%,-50%);
-background:#111;padding:25px;border-radius:20px;
-display:none;flex-direction:column;gap:15px;
-}
+/* dock icons */
+.icons{display:flex;gap:20px}
+.icon{font-size:28px;cursor:pointer}
 </style>
 </head>
 
 <body>
 
 <div class="bg"></div>
+<div class="desktop" id="desktop"></div>
 
-<div class="toolbar">
-<button onclick="back()">◀</button>
-<button onclick="forward()">▶</button>
-<button onclick="reload()">⟳</button>
-<input id="url" class="address" placeholder="Search DuckDuckGo or enter URL">
-<button onclick="bookmark()">★</button>
-<button onclick="openSettings()">⚙</button>
-<button onclick="cloak()">🕶</button>
+<div class="taskbar">
+<div class="icons">
+<div class="icon" onclick="openBrowser()">🌐</div>
+<div class="icon" onclick="openGames()">🎮</div>
+<div class="icon" onclick="openSettings()">⚙</div>
+</div>
+<div id="tasks"></div>
 </div>
 
-<div class="tabs" id="tabs"></div>
-<div id="content" style="height:calc(100vh - 90px)"></div>
-
-<!-- HOME -->
-<div class="home" id="home">
-<div class="logo">TUFF</div>
-<input class="search" placeholder="Search..."
-onkeydown="homeSearch(event)">
-<div class="dock">
-<div class="app" onclick="openURL('https://duckduckgo.com','Browser')">🌐</div>
-<div class="app" onclick="openGames()">🎮</div>
-<div class="app" onclick="openURL('https://chat.openai.com','AI')">✨</div>
-<div class="app" onclick="openSettings()">⚙</div>
-</div>
-</div>
-
-<!-- SETTINGS -->
-<div class="settings" id="settings">
-<h2>Settings</h2>
-<input type="file" onchange="wallpaper(event)">
-<button onclick="music()">Toggle Music</button>
-<button onclick="closeSettings()">Close</button>
-</div>
-
-<audio id="player" loop src=""></audio>
+<audio id="player" loop></audio>
 
 <script>
-let current
+let z=1
 
-url.onkeydown=e=>{
-if(e.key==="Enter"){
-let v=url.value
-let u=v.includes(".")?"https://"+v:"https://duckduckgo.com/?q="+v
-openURL(u,"New Tab")
-}}
+function createWindow(title,content){
+let win=document.createElement("div")
+win.className="window"
+win.style.top="80px"
+win.style.left="120px"
+win.style.zIndex=++z
 
-function homeSearch(e){
-if(e.key==="Enter")openURL("https://duckduckgo.com/?q="+e.target.value,"Search")
+win.innerHTML=`
+<div class="titlebar">
+${title}
+<div class="controls">
+<span onclick="this.closest('.window').remove()">✖</span>
+</div>
+</div>
+${content}
+`
+
+desktop.appendChild(win)
+drag(win)
+task(title,win)
 }
 
-function openURL(u,n){
-home.style.display="none"
-let f=document.createElement("iframe")
-f.src=u
-content.appendChild(f)
+function drag(el){
+let bar=el.querySelector(".titlebar")
+bar.onmousedown=e=>{
+let x=e.clientX-el.offsetLeft
+let y=e.clientY-el.offsetTop
+document.onmousemove=e=>{
+el.style.left=e.clientX-x+"px"
+el.style.top=e.clientY-y+"px"
+}
+document.onmouseup=()=>document.onmousemove=null
+}
+}
 
+/* taskbar */
+function task(name,win){
 let t=document.createElement("div")
-t.className="tab"
-t.innerHTML="<img src='https://www.google.com/s2/favicons?domain="+u+"'> "+n+" <span class='close'>×</span>"
-tabs.appendChild(t)
-
-t.onclick=()=>activate(t,f)
-t.querySelector(".close").onclick=e=>{e.stopPropagation();t.remove();f.remove()}
-
-activate(t,f)
+t.className="task"
+t.textContent=name
+t.onclick=()=>win.style.zIndex=++z
+tasks.appendChild(t)
 }
 
-function activate(t,f){
-document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"))
-document.querySelectorAll("iframe").forEach(x=>x.classList.remove("active"))
-t.classList.add("active")
-f.classList.add("active")
-current=f
+/* apps */
+function openBrowser(){
+createWindow("Browser",`
+<div class="toolbar">
+<input id="urlBox" placeholder="Search DuckDuckGo or enter URL"
+style="width:100%;padding:8px;background:#ffffff10;border:none;color:white"
+onkeydown="if(event.key==='Enter'){go(this)}">
+</div>
+<iframe src="https://duckduckgo.com"></iframe>
+`)
 }
 
-function back(){current?.contentWindow.history.back()}
-function forward(){current?.contentWindow.history.forward()}
-function reload(){current?.contentWindow.location.reload()}
-
-function bookmark(){localStorage.setItem("last",current.src)}
-
-function cloak(){
-document.title="Google"
-favicon.href="https://google.com/favicon.ico"
+function go(i){
+let u=i.value.includes(".")?"https://"+i.value:
+"https://duckduckgo.com/?q="+i.value
+i.parentElement.nextElementSibling.src=u
 }
 
-function openSettings(){settings.style.display="flex"}
-function closeSettings(){settings.style.display="none"}
+function openGames(){
+createWindow("Games",`
+<iframe src="data:text/html,<h1 style='color:white;text-align:center'>Your games here</h1>"></iframe>
+`)
+}
 
+function openSettings(){
+createWindow("Settings",`
+<div style="padding:20px;display:flex;flex-direction:column;gap:15px">
+<input type="file" onchange="wallpaper(event)">
+<button onclick="music()">Toggle Music</button>
+<button onclick="cloak()">Cloak</button>
+</div>
+`)
+}
+
+/* features */
 function wallpaper(e){
 let r=new FileReader()
 r.onload=()=>document.body.style.background="url("+r.result+") center/cover"
@@ -190,8 +167,9 @@ player.src="https://files.catbox.moe/8f3y5x.mp3"
 player.paused?player.play():player.pause()
 }
 
-function openGames(){
-openURL("data:text/html,<h1 style='color:white;text-align:center'>Games</h1>","Games")
+function cloak(){
+document.title="Google"
+favicon.href="https://google.com/favicon.ico"
 }
 </script>
 
